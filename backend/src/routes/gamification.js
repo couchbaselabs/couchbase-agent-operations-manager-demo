@@ -23,13 +23,12 @@ router.get("/", async (req, res, next) => {
       yourContribution: 26500,
       buyer,
       recognitionFeed: state.recognitionFeed || [],
-      // Agent accuracy: "the accuracy of agent, it goes both ways" (Vivek K)
-      // — computed from real accept/reject events logged this session.
+      // Agent accuracy runs both ways (accept and reject) — computed from
+      // real accept/reject events logged this session.
       agentAccuracy,
-      // "Hunger Games" — Bhavik Shah: "Vivek is planning to schedule Hunger
-      // Games with it. Basically competitions ... within the business
-      // units, how much they're using." Verified savings by business unit,
-      // from the same buyer-action log.
+      // "Hunger Games" — friendly competitions between business units on
+      // how much they're using the recommendations. Verified savings by
+      // business unit, from the same buyer-action log.
       hungerGames,
     });
   } catch (err) {

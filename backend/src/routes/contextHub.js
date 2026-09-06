@@ -1,12 +1,11 @@
 /**
  * AI Architecture / Context Hub route.
  *
- * Surfaces the actual architecture Vivek K described on the 2026-08-25
- * call — the 5-layer Context Hub, the Trust Layer, the business-rule
- * catalog, the AI Data Plane phased journey, the business-unit / LMN
- * process mapping, and the agent build-out roadmap — so it's visible in
- * the app itself, not only in the README. See backend/src/data/seed.js for
- * the source data and the transcript quotes it's grounded in.
+ * Surfaces the architecture modeled behind this app — the 5-layer Context
+ * Hub, the Trust Layer, the business-rule catalog, the AI Data Plane
+ * phased journey, the business-unit / LMN process mapping, and the agent
+ * build-out roadmap — so it's visible in the app itself, not only in the
+ * README. See backend/src/data/seed.js for the source data.
  */
 const express = require("express");
 const seed = require("../data/seed");

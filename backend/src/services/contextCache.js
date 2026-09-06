@@ -1,14 +1,13 @@
 /**
  * Context-caching layer.
  *
- * The reference recording this app is built from is titled "Context
- * Caching" — the idea being that instead of re-querying source ERPs and
- * Snowflake every time a buyer opens a PR, the agents' decisions (and the
- * data they were computed from) are cached in Couchbase and served back
- * near-instantly on repeat access. This module is the thin layer that
- * makes that visible: every decision response tells the UI whether it was
- * a cache hit and how long it took, so the effect of the cache is
- * something you can actually see rather than just a talking point.
+ * The idea: instead of re-querying source ERPs and Snowflake every time a
+ * buyer opens a PR, the agents' decisions (and the data they were computed
+ * from) are cached in Couchbase and served back near-instantly on repeat
+ * access. This module is the thin layer that makes that visible: every
+ * decision response tells the UI whether it was a cache hit and how long
+ * it took, so the effect of the cache is something you can actually see
+ * rather than just a talking point.
  */
 
 const cb = require("../db/couchbase");

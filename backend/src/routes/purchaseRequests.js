@@ -85,11 +85,10 @@ router.post("/:id/accept", async (req, res, next) => {
   }
 });
 
-// Buyer rejects the agent's recommendation. Per Vivek K on the 2026-08-25
-// call, agent accuracy "goes both ways" — a reject is just as important to
-// log as an accept, so the Trust Layer's buyer-behavior tracking (see
-// store.getAgentAccuracy) has both sides of the ledger, not only accepted
-// savings.
+// Buyer rejects the agent's recommendation. Agent accuracy runs both
+// ways — a reject is just as important to log as an accept, so the Trust
+// Layer's buyer-behavior tracking (see store.getAgentAccuracy) has both
+// sides of the ledger, not only accepted savings.
 router.post("/:id/reject", async (req, res, next) => {
   try {
     const pr = await store.getPurchaseRequest(req.params.id);

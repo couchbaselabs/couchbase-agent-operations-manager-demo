@@ -199,8 +199,8 @@ function renderGamification(g) {
     )
     .join("");
 
-  // Agent accuracy: "the accuracy of agent, it goes both ways" (Vivek K) —
-  // computed server-side from real accept/reject events this session.
+  // Agent accuracy runs both ways (accept and reject) — computed
+  // server-side from real accept/reject events this session.
   const accuracyList = document.getElementById("agent-accuracy-list");
   const accuracy = g.agentAccuracy || [];
   accuracyList.innerHTML =
@@ -215,7 +215,7 @@ function renderGamification(g) {
           )
           .join("");
 
-  // "Hunger Games" — Bhavik Shah: competitions between business units on
+  // "Hunger Games" — friendly competitions between business units on
   // verified savings/usage. Leaderboard from the same buyer-action log.
   const hgList = document.getElementById("hunger-games-list");
   const hg = g.hungerGames || [];
