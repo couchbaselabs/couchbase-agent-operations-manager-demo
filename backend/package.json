@@ -1,0 +1,18 @@
+{
+  "name": "couchbase-procurement-command-center-backend",
+  "version": "1.0.0",
+  "description": "API + agent engine for the Couchbase Procurement Command Center",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Couchbase Procurement Command Center Demo</title>
+  <link rel="icon" type="image/svg+xml" href="couchbase-mark.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <div class="brand-mark logo login-brand-mark"><img src="couchbase-mark.svg" alt="Couchbase" /></div>
+      <h1>Couchbase Procurement Command Center Demo</h1>
+      <p class="subtitle">Sign in to continue.</p>
+      <p id="login-status" class="subtitle hidden"></p>
+
+      <form id="login-form">
+        <label>Username <input id="login-username" autocomplete="username" required /></label>
+        <label>Password <input id="login-password" type="password" autocomplete="current-password" /></label>
+        <div id="login-error" class="login-error hidden"></div>
+        <button type="submit">Sign in</button>
+      </form>
+
+      <form id="set-password-form" class="hidden">
+        <p>First sign-in for <strong id="setpw-username"></strong> — set a password to continue.</p>
+        <label>New password <input id="setpw-new" type="password" minlength="8" autocomplete="new-password" required /></label>
+        <label>Confirm password <input id="setpw-confirm" type="password" minlength="8" autocomplete="new-password" required /></label>
+        <div id="setpw-error" class="login-error hidden"></div>
+        <button type="submit">Set password &amp; sign in</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="app hidden" id="app-root">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark logo"><img src="couchbase-mark.svg" alt="Couchbase" /></div>
+        <div class="brand-name">Couchbase<br />Procurement<br />Command Center Demo</div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-icon">⌂</span> Dashboard
+        </button>
+        <button class="nav-item" data-view="purchase-requests">
+          <span class="nav-icon">☰</span> Purchase Requests <span class="nav-count" id="count-pr">–</span>
+        </button>
+        <button class="nav-item" data-view="po-summary">
+          <span class="nav-icon">▣</span> PO Summary <span class="nav-count" id="count-po">–</span>
+        </button>
+        <button class="nav-item" data-view="po-management">
+          <span class="nav-icon">✎</span> PO Management <span class="nav-count" id="count-po-mgmt">–</span>
+        </button>
+        <button class="nav-item" data-view="supplier-communication">
+          <span class="nav-icon">✉</span> Supplier Communication <span class="nav-count" id="count-comm">–</span>
+        </button>
+        <button class="nav-item" data-view="suppliers">
+          <span class="nav-icon">◎</span> Suppliers
+        </button>
+        <div class="nav-section-label">Tools</div>
+        <button class="nav-item" data-view="architecture">
+          <span class="nav-icon">◆</span> AI Architecture
+        </button>
+
+        <div class="nav-section-label admin-only hidden" id="nav-settings-label">Settings</div>
+        <button class="nav-item admin-only hidden" data-view="settings-users" id="nav-item-settings-users">
+          <span class="nav-icon">◈</span> Users &amp; Roles
+        </button>
+        <button class="nav-item admin-only hidden" data-view="settings-demo" id="nav-item-settings-demo">
+          <span class="nav-icon">▶</span> Demo
+        </button>
+        <button class="nav-item admin-only hidden" data-view="settings-agent-sim" id="nav-item-settings-agent-sim">
+          <span class="nav-icon">⚙</span> Agent Simulation
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="connected-systems">
+          <div class="sidebar-label">Connected Systems</div>
+          <ul id="connected-systems-list"></ul>
+        </div>
+        <div class="ai-agents">
+          <button class="sidebar-label collapsible" id="ai-agents-toggle">+ AI Agents</button>
+          <ul id="ai-agents-list" class="hidden"></ul>
+        </div>
+        <div class="session-pill" id="session-pill">
+          <div>
+            Signed in as <strong id="session-username">–</strong>
+            <span class="pill blue" id="session-role">–</span>
+          </div>
+          <button type="button" id="logout-btn">Sign out</button>
+        </div>
+        <div class="buyer-pill" id="buyer-pill">
+          <div class="avatar">–</div>
+          <div>
+            <div class="buyer-name">–</div>
+            <div class="buyer-role">–</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <h1 id="page-title">Procurement Command Center</h1>
+          <p id="page-subtitle" class="subtitle">Loading live purchasing decisions…</p>
+        </div>
+        <div class="topbar-right">
+          <input class="search" type="search" placeholder="Search requests, POs, suppliers…" />
+        </div>
+      </header>
+
+      <section id="view-dashboard" class="view">
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-icon purple">☰</div>
+            <div>
+              <div class="kpi-value" id="kpi-pr-waiting">–</div>
+              <div class="kpi-label">PR Waiting</div>
+              <div class="kpi-sub" id="kpi-pr-waiting-sub">–</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon green">$</div>
+            <div>
+              <div class="kpi-value green-text" id="kpi-savings">–</div>
+              <div class="kpi-label">Savings Identified</div>
+              <div class="kpi-sub">Potential savings</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon orange">!</div>
+            <div>
+              <div class="kpi-value" id="kpi-oversupply">–</div>
+              <div class="kpi-label">Oversupply Alerts</div>
+              <div class="kpi-sub">Don't buy items</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon blue">▣</div>
+            <div>
+              <div class="kpi-value" id="kpi-pos">–</div>
+              <div class="kpi-label">POs Created</div>
+              <div class="kpi-sub">This month</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="decision-feed card">
+            <div class="feed-header">
+              <h2>AI Decision Feed</h2>
+              <div class="feed-tabs" id="feed-tabs">
+                <button class="tab active" data-filter="all">All</button>
+                <button class="tab" data-filter="urgent">Urgent</button>
+                <button class="tab" data-filter="buy_now">Buy</button>
+                <button class="tab" data-filter="dont_buy">Don't Buy</button>
+                <button class="tab" data-filter="review">Review</button>
+                <button class="tab" data-filter="source">Source</button>
+              </div>
+            </div>
+            <div id="feed-list" class="feed-list"><div class="loading">Loading decisions…</div></div>
+          </div>
+
+          <div class="side-panel">
+            <div id="side-panel-detail" class="card hidden"></div>
+            <div id="side-panel-default">
+            <div class="copilot card">
+              <div class="copilot-header">
+                <div class="copilot-avatar">AI</div>
+                <div>
+                  <div class="copilot-title">Procurement AI</div>
+                  <div class="copilot-subtitle">Context-aware buyer copilot</div>
+                </div>
+                <div class="online-dot" title="Online"></div>
+              </div>
+              <div class="copilot-context" id="copilot-context">Context: Command Center · all purchasing decisions</div>
+              <div id="copilot-messages" class="copilot-messages">
+                <div class="copilot-msg">I can explain recommendations, compare current and suggested suppliers, find excess supply by org, review priorities, or tell you what must be validated before a PO goes to the supplier.</div>
+              </div>
+              <div class="copilot-chips">
+                <button class="chip" data-action="my_priority">My priority</button>
+                <button class="chip" data-action="compare_suppliers">Compare suppliers</button>
+                <button class="chip" data-action="explain_oversupply">Explain oversupply</button>
+                <button class="chip" data-action="po_readiness">PO readiness</button>
+              </div>
+              <form id="copilot-form" class="copilot-input">
+                <input id="copilot-text" type="text" placeholder="Ask about the selected PR, supplier, inventory or PO…" />
+                <button type="submit">Send</button>
+              </form>
+            </div>
+
+            <div class="savings-momentum card">
+              <div class="sm-header">
+                <span>$ Savings Momentum</span>
+                <span class="live-badge">● LIVE</span>
+              </div>
+              <div class="sm-amount" id="sm-amount">–</div>
+              <div class="sm-caption">verified this week</div>
+              <div class="sm-quest-label">
+                <span>Weekly Quest</span>
+                <span id="sm-quest-fraction">–</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" id="sm-progress"></div></div>
+              <div class="sm-hint" id="sm-hint">Weekly quest complete — every additional verified saving extends your momentum.</div>
+              <div class="sm-status-row">
+                <div><div class="sm-status-label">STATUS</div><div id="sm-status">–</div></div>
+                <div><div class="sm-status-label">MOMENTUM</div><div id="sm-streak">–</div></div>
+              </div>
+              <div class="team-momentum">
+                <div class="sm-status-label" id="team-label">TEAM MOMENTUM</div>
+                <div class="progress-bar"><div class="progress-fill purple" id="team-progress"></div></div>
+                <div class="team-caption" id="team-caption">–</div>
+                <div class="team-caption">Your verified contribution: <strong id="your-contribution">–</strong></div>
+              </div>
+              <div id="recognition-feed" class="recognition-feed"></div>
+              <div class="team-momentum">
+                <div class="sm-status-label">AGENT ACCURACY</div>
+                <div id="agent-accuracy-list" class="mini-list"></div>
+              </div>
+              <div class="team-momentum">
+                <div class="sm-status-label">🏆 HUNGER GAMES — BUSINESS UNIT LEADERBOARD</div>
+                <div id="hunger-games-list" class="mini-list"></div>
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-purchase-requests" class="view hidden">
+        <div class="card">
+          <h2>Purchase Requests</h2>
+          <div id="pr-table-wrap"></div>
+        </div>
+      </section>
+
+      <section id="view-po-summary" class="view hidden">
+        <div class="card">
+          <h2>PO Summary</h2>
+          <div id="po-summary-wrap"></div>
+        </div>
+      </section>
+
+      <section id="view-po-management" class="view hidden">
+        <div class="card">
+          <h2>PO Management</h2>
+          <p class="subtitle">Purchase orders pending approval or follow-up.</p>
+          <div id="po-management-wrap"></div>
+        </div>
+      </section>
+
+      <section id="view-supplier-communication" class="view hidden">
+        <div class="card">
+          <h2>Supplier Communication</h2>
+          <div id="comm-wrap"></div>
+        </div>
+      </section>
+
+      <section id="view-suppliers" class="view hidden">
+        <div class="card">
+          <h2>Suppliers</h2>
+          <div id="suppliers-wrap"></div>
+        </div>
+      </section>
+
+      <section id="view-architecture" class="view hidden">
+        <div id="architecture-wrap"></div>
+      </section>
+
+      <section id="view-settings-users" class="view hidden">
+        <div class="card">
+          <h2>Users &amp; Roles</h2>
+          <p class="subtitle">Local accounts for this app. Roles: <strong>admin</strong> (manages users and roles), <strong>buyer</strong> (works purchase requests and POs), <strong>viewer</strong> (read-only).</p>
+          <form id="add-user-form" class="inline-form">
+            <input id="new-user-username" placeholder="Username" required autocomplete="off" />
+            <select id="new-user-role">
+              <option value="viewer">viewer</option>
+              <option value="buyer">buyer</option>
+              <option value="admin">admin</option>
+            </select>
+            <input id="new-user-password" type="password" placeholder="Initial password (optional)" autocomplete="new-password" />
+            <button type="submit">Add user</button>
+          </form>
+          <p class="subtitle">Leave the initial password blank to have that user set their own password at first login, the same way the default admin account works.</p>
+          <div id="settings-users-error" class="login-error hidden"></div>
+          <div id="settings-users-wrap"></div>
+        </div>
+      </section>
+
+
+      <section id="view-settings-demo" class="view hidden">
+        <div class="card">
+          <h2>Demo</h2>
+          <p class="subtitle">
+            Simulates 100 buyers repeatedly asking the copilot's common questions ("My priority",
+            "Compare suppliers", "Explain oversupply", "PO readiness") across this app's seeded purchase
+            requests. Every request goes through the real copilot → Couchbase Agent Operations Manager (AOM)
+            path — nothing here is faked. A closed-loop controller deliberately mixes in a calculated share of
+            genuinely fresh (never-before-asked) questions alongside repeats, so the trailing one-minute hit
+            rate you'll see in Couchbase Agent Operations Manager's own
+            <a href="https://localhost/llm-caching" target="_blank" rel="noopener">Cache Dashboard</a> drifts
+            in a slow, natural-looking wave between about 82% and 96% for as long as the demo keeps running,
+            rather than climbing toward a suspiciously perfect 100%. Expect a lower rate for the first
+            20-30 seconds while the question pool is warming up. No purchase requests, POs, or buyer-action
+            records are created — stopping the demo leaves nothing behind to clean up.
+          </p>
+          <div class="drawer-actions">
+            <button type="button" id="demo-start-btn" class="primary">Start demo</button>
+            <button type="button" id="demo-stop-btn" class="danger" disabled>Stop demo</button>
+          </div>
+          <div id="demo-not-configured" class="login-error hidden">
+            COUCHBASE_AOM_API_KEY isn't set, so this will simulate the copilot's traffic pattern but never
+            actually reach AOM — the fallback rule-based text will always answer instead. Configure AOM in
+            this app's <code>.env</code> to see real cache hits.
+          </div>
+          <div id="demo-stats" class="demo-stats hidden">
+            <div class="demo-stat"><div class="demo-stat-value" id="demo-stat-status">–</div><div class="demo-stat-label">Status</div></div>
+            <div class="demo-stat"><div class="demo-stat-value" id="demo-stat-hitrate">–</div><div class="demo-stat-label">Hit rate (last 60s)</div></div>
+            <div class="demo-stat"><div class="demo-stat-value" id="demo-stat-target">–</div><div class="demo-stat-label">Target (82-96% band)</div></div>
+            <div class="demo-stat"><div class="demo-stat-value" id="demo-stat-requests">–</div><div class="demo-stat-label">Requests sent</div></div>
+            <div class="demo-stat"><div class="demo-stat-value" id="demo-stat-hits">–</div><div class="demo-stat-label">Hits / Misses</div></div>
+            <div class="demo-stat"><div class="demo-stat-value" id="demo-stat-warmup">–</div><div class="demo-stat-label">Question pool warmed</div></div>
+            <div class="demo-stat"><div class="demo-stat-value" id="demo-stat-elapsed">–</div><div class="demo-stat-label">Elapsed</div></div>
+          </div>
+          <div id="demo-error" class="login-error hidden"></div>
+        </div>
+      </section>
+
+      <section id="view-settings-agent-sim" class="view hidden">
+        <div class="card">
+          <h2>Agent Simulation</h2>
+          <p class="subtitle">
+            Runs two role-played Couchbase Agent Operations Manager (AOM) identities against this app's real
+            copilot and MCP tool paths, once a minute. Every tick, a <strong>support_agent</strong> "customer
+            support call" asks the copilot to explain an oversupply alert or confirm PO readiness on a random
+            purchase request and checks Zendesk for related open tickets, authenticating to AOM as its
+            <code>support_agent</code> identity throughout. Every few
+            minutes, an <strong>admin</strong> turn also runs AOM's bundled Web Search and Internal Docs
+            Search tools and creates a Jira issue via AOM's Jira MCP server. All of that hits AOM's own
+            bundled sample MCP servers, which return mocked data and make no real external request or write
+            of their own — including the internal docs search, which AOM quarantines at ingest as one of its
+            own MCP-hijacking fixtures, so it's expected to come back empty every time, and the web search,
+            whose mocked response is the other fixture — watch it flag a live finding on AOM's own Threat
+            Detection page the first time it runs. No purchase requests, POs, or buyer-action records are
+            created here either — stopping this leaves nothing behind to clean up.
+          </p>
+          <div class="drawer-actions">
+            <button type="button" id="sim-start-btn" class="primary">Start simulation</button>
+            <button type="button" id="sim-stop-btn" class="danger" disabled>Stop simulation</button>
+          </div>
+          <div id="sim-not-configured" class="login-error hidden">
+            No Couchbase Agent Operations Manager API key is configured for the admin role, so this will run
+            but never actually reach AOM — no LLM narration, tool calls, or Jira issues will happen. Configure
+            AOM in this app's <code>.env</code> to see real activity.
+          </div>
+          <div id="sim-stats" class="demo-stats hidden">
+            <div class="demo-stat"><div class="demo-stat-value" id="sim-stat-status">–</div><div class="demo-stat-label">Status</div></div>
+            <div class="demo-stat"><div class="demo-stat-value" id="sim-stat-support-calls">–</div><div class="demo-stat-label">Support agent calls</div></div>
+            <div class="demo-stat"><div class="demo-stat-value" id="sim-stat-admin-calls">–</div><div class="demo-stat-label">Admin agent turns</div></div>
+            <div class="demo-stat"><div class="demo-stat-value" id="sim-stat-elapsed">–</div><div class="demo-stat-label">Elapsed</div></div>
+            <div class="demo-stat"><div class="demo-stat-value" id="sim-stat-interval">–</div><div class="demo-stat-label">Tick interval</div></div>
+            <div class="demo-stat"><div class="demo-stat-value" id="sim-stat-errors">–</div><div class="demo-stat-label">Errors</div></div>
+          </div>
+          <div id="sim-support-log" class="sim-log hidden">
+            <div class="sim-log-title">Last support agent call</div>
+            <div id="sim-support-log-body" class="sim-log-empty">Nothing yet.</div>
+          </div>
+          <div id="sim-admin-log" class="sim-log hidden">
+            <div class="sim-log-title">Last admin agent turn</div>
+            <div id="sim-admin-log-body" class="sim-log-empty">Nothing yet.</div>
+          </div>
+          <div id="sim-error" class="login-error hidden"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
