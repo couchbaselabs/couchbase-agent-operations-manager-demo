@@ -1,12 +1,14 @@
 # Procurement Command Center
 
-A Dockerized, AI-assisted buyer workbench modeled on a "Procurement Command
+AI-assisted buyer workbench modeled on a "Procurement Command
 Center" prototype for a large industrial buyer organization. It reproduces
 a dashboard, AI Decision Feed, PR detail workflow, Procurement AI copilot,
 and savings-gamification widgets, backed by a real (if small) service
 architecture: Node/Express API + rule-based agent engine, Couchbase
 **Enterprise Edition** as the operational data store and context cache, and
 a static frontend served by nginx.
+
+<img width="1728" height="962" alt="image" src="https://github.com/user-attachments/assets/66d0df2f-074b-4c23-a007-157739da716c" />
 
 ## How this was built
 
