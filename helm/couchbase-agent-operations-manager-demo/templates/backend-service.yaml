@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  # Literal "backend" hostname - the frontend's nginx.conf proxies
+  # /api/ to http://backend:4000 exactly like docker-compose.yml's
+  # container_name-based DNS did, so this Service must keep this name.
+  name: backend
+  labels:
+    {{- include "pcc.componentLabels" (merge (dict "component" "backend") .) | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "pcc.componentSelectorLabels" (merge (dict "component" "backend") .) | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.backend.port }}
+      targetPort: http

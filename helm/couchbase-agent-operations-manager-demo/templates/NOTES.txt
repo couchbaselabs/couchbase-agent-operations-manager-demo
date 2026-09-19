@@ -1,0 +1,19 @@
+Couchbase Procurement Command Center demo has been deployed.
+
+1. Couchbase takes a little while to initialize on first install - watch:
+     kubectl get pods -n {{ .Release.Namespace }} -w
+
+2. Browse to the app:
+{{- if eq .Values.frontend.service.type "LoadBalancer" }}
+     http://192.168.111.5:{{ .Values.frontend.service.port }}
+{{- else }}
+     kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-frontend 3002:{{ .Values.frontend.service.port }}
+     Then browse to http://localhost:3002
+{{- end }}
+
+3. This app calls out to a separately-deployed Couchbase Agent
+   Operations Manager (AOM) at {{ .Values.backend.aom.url }} for its AI
+   copilot and decision-agent LLM calls / Snowflake tool cross-checks.
+   With no AOM reachable there, those features fall back to their own
+   rule-based behavior - nothing breaks, but see this chart's README for
+   how to point it at your AOM install.

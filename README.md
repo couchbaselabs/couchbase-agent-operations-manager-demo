@@ -695,3 +695,31 @@ Couchbase, Inc. - see [LICENSE](./LICENSE). It is not open source: use,
 modification, and redistribution are not permitted except under separate
 written terms Couchbase, Inc. provides (e.g., an internal-use policy or
 a customer evaluation/beta agreement).
+
+## Kubernetes (K3s / Rancher) deployment
+
+A Helm chart is included at `helm/couchbase-agent-operations-manager-demo/`
+to deploy this app's three pieces (Couchbase, backend, frontend) onto the
+`couchbase-demo-server` K3s/Rancher cluster (192.168.111.5), exposed
+externally at **port 3002**.
+
+```bash
+# on couchbase-demo-server itself (builds both images and imports them
+# into K3s's containerd directly - see deploy/deploy.sh for a
+# registry-based alternative):
+./deploy/deploy.sh
+```
+
+This installs the `procurement-demo` Helm release into the
+`procurement-demo` namespace and exposes the app at
+`http://192.168.111.5:3002` via a `LoadBalancer` Service (K3s's built-in
+Klipper ServiceLB binds that port directly on the node).
+
+By default the backend points its AOM integration at
+`https://aom-operations-manager.agent-ops.svc.cluster.local:8090`, which
+matches installing the `couchbase-agent-operations-manager` chart with
+`--set fullnameOverride=aom --namespace agent-ops` (see that repo's
+`deploy/deploy.sh`). Override `backend.aom.url` in
+`helm/couchbase-agent-operations-manager-demo/values.yaml` if you deploy
+AOM differently, or leave AOM out entirely - this app's copilot and
+decision agents fall back to rule-based behavior with no AOM reachable.

@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-backend
+  labels:
+    {{- include "pcc.componentLabels" (merge (dict "component" "backend") .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "pcc.componentSelectorLabels" (merge (dict "component" "backend") .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "pcc.componentSelectorLabels" (merge (dict "component" "backend") .) | nindent 8 }}
+    spec:
+      initContainers:
+        - name: wait-for-couchbase
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Waiting for Couchbase..."
+              until wget -q -O /dev/null http://couchbase:8091/pools 2>/dev/null || nc -z couchbase 8091 2>/dev/null; do sleep 2; done
+              echo "Couchbase reachable."
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.port }}
+          env:
+            - name: PORT
+              value: {{ .Values.backend.port | quote }}
+            - name: COUCHBASE_MGMT_URL
+              value: "http://couchbase:8091"
+            - name: COUCHBASE_QUERY_URL
+              value: "http://couchbase:8093"
+            - name: COUCHBASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-couchbase
+                  key: COUCHBASE_USERNAME
+            - name: COUCHBASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-couchbase
+                  key: COUCHBASE_PASSWORD
+            - name: COUCHBASE_BUCKET
+              value: {{ .Values.couchbase.bucket | quote }}
+            - name: COUCHBASE_AOM_URL
+              value: {{ .Values.backend.aom.url | quote }}
+            - name: COUCHBASE_AOM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-backend
+                  key: COUCHBASE_AOM_API_KEY
+            - name: COUCHBASE_AOM_PROVIDER
+              value: {{ .Values.backend.aom.provider | quote }}
+            - name: COUCHBASE_AOM_MODEL
+              value: {{ .Values.backend.aom.model | quote }}
+            - name: COUCHBASE_AOM_ALLOW_INSECURE_TLS
+              value: {{ .Values.backend.aom.allowInsecureTls | quote }}
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-backend
+                  key: ENCRYPTION_KEY
+            - name: COOKIE_SECURE
+              value: {{ .Values.backend.cookieSecure | quote }}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}

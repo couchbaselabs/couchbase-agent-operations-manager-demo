@@ -1,0 +1,19 @@
+apiVersion: v2
+name: couchbase-agent-operations-manager-demo
+description: >-
+  Couchbase Procurement Command Center demo (aka the Agent Operations
+  Manager demo) - a Couchbase-backed procurement app (purchase
+  requests/orders, supplier management, an AI copilot, and decision
+  agents) that optionally routes its LLM calls and MCP tool checks
+  through a separately-deployed Couchbase Agent Operations Manager (AOM)
+  appliance. Deploys the same three-piece topology as the repo's
+  docker-compose.yml (Couchbase, the Node/Express backend, and the
+  nginx-served frontend) as native Kubernetes resources.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - couchbase
+  - procurement
+  - agents
+  - demo

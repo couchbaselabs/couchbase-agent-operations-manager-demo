@@ -1,0 +1,16 @@
+{{- if .Values.couchbase.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-couchbase-data
+  labels:
+    {{- include "pcc.componentLabels" (merge (dict "component" "couchbase") .) | nindent 4 }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- if .Values.couchbase.persistence.storageClassName }}
+  storageClassName: {{ .Values.couchbase.persistence.storageClassName | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.couchbase.persistence.size }}
+{{- end }}

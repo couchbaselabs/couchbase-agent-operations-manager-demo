@@ -1,0 +1,100 @@
+# Default values for couchbase-agent-operations-manager-demo (the
+# Couchbase Procurement Command Center demo).
+#
+# There are no published images for this repo's three custom pieces -
+# build and import them yourself first; see deploy/deploy.sh and this
+# chart's README.md.
+
+global:
+  imageRegistry: ""
+
+# ---------------------------------------------------------------------
+# Couchbase Server - same role as docker-compose.yml: the app's data
+# store, queried over plain REST + N1QL HTTP (no binary KV protocol, so
+# only the management (8091) and query (8093) ports need a Service).
+# ---------------------------------------------------------------------
+couchbase:
+  image:
+    repository: couchbase
+    tag: enterprise-8.0.2
+    pullPolicy: IfNotPresent
+  username: Administrator
+  password: password123
+  bucket: procurement
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 6Gi
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClassName: ""
+
+backend:
+  replicaCount: 1
+  image:
+    repository: couchbase-pcc-backend
+    tag: "k3s"
+    pullPolicy: IfNotPresent
+  port: 4000
+
+  # The Couchbase Agent Operations Manager (AOM) - deployed separately in
+  # this same cluster (see the couchbase-agent-operations-manager repo's
+  # helm chart). Defaults assume AOM was installed with
+  # `--set fullnameOverride=aom --namespace agent-ops`, giving it an
+  # in-cluster Service named aom-operations-manager in the agent-ops
+  # namespace. Point this at wherever you actually installed it.
+  aom:
+    url: https://aom-operations-manager.agent-ops.svc.cluster.local:8090
+    # Demo default: AOM's own seeded finance_analyst key - the
+    # least-privilege seeded role that can still call the Snowflake
+    # sample tools this app's warehouse cross-checks use.
+    apiKey: demo-finance-analyst-7e83
+    provider: google
+    model: gemini-2.5-flash
+    # AOM serves HTTPS with a self-signed cert by default - trust it for
+    # this one client connection. Set to "false" only once AOM is behind
+    # a real CA-signed certificate.
+    allowInsecureTls: "true"
+
+  # Encrypts local login password hashes at rest. Leave blank to have the
+  # chart generate and persist a random value on first install (kept
+  # stable across `helm upgrade` - see templates/secret-backend.yaml).
+  encryptionKey: ""
+  cookieSecure: ""
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: couchbase-pcc-frontend
+    tag: "k3s"
+    pullPolicy: IfNotPresent
+  # LoadBalancer is the closest match to docker-compose.yml publishing
+  # the frontend straight to the host. On K3s this is Klipper's built-in
+  # ServiceLB, which binds `service.port` directly on every node's IP.
+  service:
+    type: LoadBalancer
+    port: 3002
+    targetPort: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

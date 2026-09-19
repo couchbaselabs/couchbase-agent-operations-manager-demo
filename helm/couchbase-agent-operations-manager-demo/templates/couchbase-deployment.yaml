@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-couchbase
+  labels:
+    {{- include "pcc.componentLabels" (merge (dict "component" "couchbase") .) | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "pcc.componentSelectorLabels" (merge (dict "component" "couchbase") .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "pcc.componentSelectorLabels" (merge (dict "component" "couchbase") .) | nindent 8 }}
+    spec:
+      containers:
+        - name: couchbase
+          image: "{{ .Values.couchbase.image.repository }}:{{ .Values.couchbase.image.tag }}"
+          imagePullPolicy: {{ .Values.couchbase.image.pullPolicy }}
+          ports:
+            - name: mgmt
+              containerPort: 8091
+            - name: query
+              containerPort: 8093
+          volumeMounts:
+            - name: data
+              mountPath: /opt/couchbase/var
+          # No -f: this Couchbase Server version answers /pools with 401
+          # as soon as the node process is up (auth or no auth) - curl -f
+          # would treat that as a hard failure forever. See the repo's
+          # docker-compose.yml for the full story.
+          startupProbe:
+            exec:
+              command: ["curl", "-s", "-o", "/dev/null", "http://localhost:8091/pools"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 40
+          readinessProbe:
+            exec:
+              command: ["curl", "-s", "-o", "/dev/null", "http://localhost:8091/pools"]
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command: ["curl", "-s", "-o", "/dev/null", "http://localhost:8091/pools"]
+            periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            {{- toYaml .Values.couchbase.resources | nindent 12 }}
+      volumes:
+        - name: data
+          {{- if .Values.couchbase.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-couchbase-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
